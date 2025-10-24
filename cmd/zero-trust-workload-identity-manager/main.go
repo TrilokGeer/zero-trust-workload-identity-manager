@@ -181,6 +181,7 @@ func main() {
 		exitOnError(err, "unable to setup static resource controller manager")
 	}
 
+	/*
 	spireServerControllerManager, err := spireServerController.New(mgr)
 	exitOnError(err, "unable to set up spire server controller manager")
 	if err = spireServerControllerManager.SetupWithManager(mgr); err != nil {
@@ -210,7 +211,7 @@ func main() {
 	if err = spireOIDCDiscoveryProviderControllerManager.SetupWithManager(mgr); err != nil {
 		exitOnError(err, "unable to setup spire OIDC discovery provider controller manager")
 	}
-
+*/ 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		exitOnError(err, "unable to set up health check")
 	}

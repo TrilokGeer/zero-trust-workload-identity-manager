@@ -970,6 +970,33 @@ spec:
                         x-kubernetes-list-type: atomic
                     type: object
                 type: object
+              components:
+                items:
+                  properties:
+                    configurationRef:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    name:
+                      enum:
+                      - spire-server
+                      - spire-agent
+                      - oidc-discovery-provider
+                      - csi-driver
+                      - controller-manager
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - configurationRef
+                  - name
+                  type: object
+                type: array
               labels:
                 additionalProperties:
                   type: string
@@ -1101,6 +1128,8 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
+            required:
+            - components
             type: object
           status:
             description: ZeroTrustWorkloadIdentityManagerStatus defines the observed

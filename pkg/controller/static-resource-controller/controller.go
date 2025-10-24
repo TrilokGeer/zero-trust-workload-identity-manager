@@ -29,6 +29,10 @@ import (
 
 	"github.com/openshift/zero-trust-workload-identity-manager/api/v1alpha1"
 	customClient "github.com/openshift/zero-trust-workload-identity-manager/pkg/client"
+	spiffeCsiDriverController "github.com/openshift/zero-trust-workload-identity-manager/pkg/controller/spiffe-csi-driver"
+	spireAgentController "github.com/openshift/zero-trust-workload-identity-manager/pkg/controller/spire-agent"
+	spireOIDCDiscoveryProviderController "github.com/openshift/zero-trust-workload-identity-manager/pkg/controller/spire-oidc-discovery-provider"
+	spireServerController "github.com/openshift/zero-trust-workload-identity-manager/pkg/controller/spire-server"
 	"github.com/openshift/zero-trust-workload-identity-manager/pkg/controller/utils"
 )
 
@@ -209,6 +213,36 @@ func (r *StaticResourceReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
+	spireServerControllerManager, err := spireServerController.New(mgr)
+	exitOnError(err, "unable to set up spire server controller manager")
+	if err = spireServerControllerManager.SetupWithManager(mgr); err != nil {
+		exitOnError(err, "unable to setup spire server controller manager")
+	}
+
+	spireAgentControllerManager, err := spireAgentController.New(mgr)
+	if err != nil {
+		exitOnError(err, "unable to set up spire agent controller manager")
+	}
+	if err = spireAgentControllerManager.SetupWithManager(mgr); err != nil {
+		exitOnError(err, "unable to setup spire agent controller manager")
+	}
+
+	spiffeCsiDriverControllerManager, err := spiffeCsiDriverController.New(mgr)
+	if err != nil {
+		exitOnError(err, "unable to set up spiffe csi driver controller manager")
+	}
+	if err = spiffeCsiDriverControllerManager.SetupWithManager(mgr); err != nil {
+		exitOnError(err, "unable to setup spiffe csi driver controller manager")
+	}
+
+	spireOIDCDiscoveryProviderControllerManager, err := spireOIDCDiscoveryProviderController.New(mgr)
+	if err != nil {
+		exitOnError(err, "unable to set up spire OIDC discovery provider controller manager")
+	}
+	if err = spireOIDCDiscoveryProviderControllerManager.SetupWithManager(mgr); err != nil {
+		exitOnError(err, "unable to setup spire OIDC discovery provider controller manager")
+	}
+
 	err = r.CreateOrApplyRbacResources(ctx, createOnlyMode)
 	if err != nil {
 		r.log.Error(err, "failed to create or apply rbac resources")
@@ -328,4 +362,11 @@ func (r *StaticResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return nil
+}
+
+func exitOnError(err error, logMessage string) {
+	if err != nil {
+		r.log.Error(err, logMessage)
+		// TODO : requeue the request for reconciliation?
+	}
 }

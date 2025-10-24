@@ -14,9 +14,20 @@ metadata:
               "app.kubernetes.io/name": "zero-trust-workload-identity-manager",
               "app.kubernetes.io/part-of": "zero-trust-workload-identity-manager"
             },
-            "name": "zerotrustworkloadidentitymanager-sample"
+            "name": "cluster"
           },
-          "spec": null
+          "spec": 
+          {
+          "components": [
+            {
+              "name": "spire-server",
+              "configurationRef": {
+                "name": "spire-server-config"
+                "namespace": "zero-trust-workload-identity-manager"
+              }
+            }
+          ]
+          }
         }
       ]
     capabilities: Basic Install

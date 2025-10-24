@@ -76,6 +76,22 @@ type ZeroTrustWorkloadIdentityManagerSpec struct {
 	Namespace string `json:"namespace,omitempty"`
 
 	CommonConfig `json:",inline"`
+
+	Components []Component `json:"components"`
+}
+
+type Component struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	// +kubebuilder:validation:MaxLength:=256
+	// +kubebuilder:validation:Enum:=spire-server;spire-agent;oidc-discovery-provider;csi-driver;controller-manager;
+	Name      string              `json:"name"`
+	ConfigRef *ComponentConfigRef `json:"configurationRef"`
+}
+
+type ComponentConfigRef struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // CommonConfig will have similar config required for all other APIs
