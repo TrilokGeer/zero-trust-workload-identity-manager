@@ -6,8 +6,9 @@ ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
-COPY . .
+COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
 
 RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
     go build -mod=mod -a \

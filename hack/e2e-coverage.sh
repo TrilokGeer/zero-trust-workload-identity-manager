@@ -93,6 +93,12 @@ collect() {
     oc wait --for=delete pod -l name=zero-trust-workload-identity-manager \
         -n "${NAMESPACE}" --timeout=60s 2>/dev/null || true
 
+    # Clean up any leftover extractor pod from a prior run
+    oc delete pod coverage-extractor -n "${NAMESPACE}" --ignore-not-found --wait=false 2>/dev/null || true
+
+    # Ensure the extractor pod is always cleaned up, even if the script fails
+    trap 'oc delete pod coverage-extractor -n "${NAMESPACE}" --ignore-not-found --wait=false 2>/dev/null || true' EXIT
+
     echo "Creating extractor pod to access PVC data..."
     oc run coverage-extractor \
         --image="${EXTRACTOR_IMAGE}" \
@@ -111,9 +117,9 @@ collect() {
     oc wait pod/coverage-extractor --for=condition=Ready \
         -n "${NAMESPACE}" --timeout=120s
 
+    # Use /. suffix so oc cp places files directly in coverage_dir, not nested
     mkdir -p "${coverage_dir}"
-    oc cp "${NAMESPACE}/coverage-extractor:${GOCOVERDIR_PATH}" "${coverage_dir}"
-    oc delete pod coverage-extractor -n "${NAMESPACE}" --wait=false || true
+    oc cp "${NAMESPACE}/coverage-extractor:${GOCOVERDIR_PATH}/." "${coverage_dir}"
 
     echo "Coverage files:"
     ls -la "${coverage_dir}/" 2>/dev/null || true
@@ -132,7 +138,21 @@ collect() {
         if [[ -n "${CODECOV_TOKEN:-}" ]]; then
             echo "Uploading to Codecov..."
             local codecov_bin="${artifact_dir}/codecov"
-            curl -sS -o "${codecov_bin}" https://uploader.codecov.io/latest/linux/codecov
+            curl -sS -o "${codecov_bin}"              https://uploader.codecov.io/latest/linux/codecov
+            curl -sS -o "${codecov_bin}.SHA256SUM"    https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -sS -o "${codecov_bin}.SHA256SUM.sig" https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+
+            # Verify integrity: import Codecov's PGP key, check signature, then checksum
+            if command -v gpg >/dev/null 2>&1 && command -v gpgv >/dev/null 2>&1; then
+                curl -sS https://keybase.io/codecovsecurity/pgp_keys.asc \
+                    | gpg --no-default-keyring --keyring trustedkeys.gpg --import 2>/dev/null || true
+                if gpgv "${codecov_bin}.SHA256SUM.sig" "${codecov_bin}.SHA256SUM" 2>/dev/null; then
+                    echo "PGP signature verified"
+                else
+                    echo "Warning: PGP signature verification failed (continuing with SHA256 check)"
+                fi
+            fi
+            cd "$(dirname "${codecov_bin}")" && sha256sum -c "$(basename "${codecov_bin}").SHA256SUM" && cd - >/dev/null
             chmod +x "${codecov_bin}"
 
             local -a codecov_args=(
@@ -163,7 +183,7 @@ collect() {
             fi
 
             "${codecov_bin}" "${codecov_args[@]}" || echo "Warning: Codecov upload failed (non-fatal)"
-            rm -f "${codecov_bin}"
+            rm -f "${codecov_bin}" "${codecov_bin}.SHA256SUM" "${codecov_bin}.SHA256SUM.sig"
         else
             echo "CODECOV_TOKEN not set -- skipping Codecov upload."
             echo "Coverage profile saved as artifact: ${coverage_profile}"
