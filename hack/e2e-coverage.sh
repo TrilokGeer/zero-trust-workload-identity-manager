@@ -157,7 +157,6 @@ collect() {
                 --file="${coverage_profile}"
                 --flags=e2e
                 --name="E2E Coverage"
-                --token="${CODECOV_TOKEN}"
                 --verbose
             )
 
