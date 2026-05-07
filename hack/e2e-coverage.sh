@@ -134,12 +134,35 @@ collect() {
             local codecov_bin="${artifact_dir}/codecov"
             curl -sS -o "${codecov_bin}" https://uploader.codecov.io/latest/linux/codecov
             chmod +x "${codecov_bin}"
-            "${codecov_bin}" \
-                --file="${coverage_profile}" \
-                --flags=e2e \
-                --name="E2E Coverage" \
-                --token="${CODECOV_TOKEN}" \
-                --verbose || echo "Warning: Codecov upload failed (non-fatal)"
+
+            local -a codecov_args=(
+                --file="${coverage_profile}"
+                --flags=e2e
+                --name="E2E Coverage"
+                --token="${CODECOV_TOKEN}"
+                --verbose
+            )
+
+            # Pass Prow context so Codecov correctly attributes the upload.
+            # Presubmits: associate with the PR number and PR head SHA.
+            # Postsubmits: associate with the base branch and merge SHA.
+            local job_type="${JOB_TYPE:-local}"
+            if [[ "${job_type}" == "presubmit" ]]; then
+                echo "Detected presubmit (PR #${PULL_NUMBER:-unknown})"
+                [[ -n "${PULL_NUMBER:-}" ]]    && codecov_args+=(--pr "${PULL_NUMBER}")
+                [[ -n "${PULL_PULL_SHA:-}" ]]   && codecov_args+=(--sha "${PULL_PULL_SHA}")
+                [[ -n "${PULL_BASE_REF:-}" ]]   && codecov_args+=(--branch "${PULL_BASE_REF}")
+                [[ -n "${REPO_OWNER:-}" && -n "${REPO_NAME:-}" ]] && codecov_args+=(--slug "${REPO_OWNER}/${REPO_NAME}")
+            elif [[ "${job_type}" == "postsubmit" ]]; then
+                echo "Detected postsubmit (branch ${PULL_BASE_REF:-unknown})"
+                [[ -n "${PULL_BASE_SHA:-}" ]]   && codecov_args+=(--sha "${PULL_BASE_SHA}")
+                [[ -n "${PULL_BASE_REF:-}" ]]   && codecov_args+=(--branch "${PULL_BASE_REF}")
+                [[ -n "${REPO_OWNER:-}" && -n "${REPO_NAME:-}" ]] && codecov_args+=(--slug "${REPO_OWNER}/${REPO_NAME}")
+            else
+                echo "Local run -- no Prow context, Codecov will auto-detect from git"
+            fi
+
+            "${codecov_bin}" "${codecov_args[@]}" || echo "Warning: Codecov upload failed (non-fatal)"
             rm -f "${codecov_bin}"
         else
             echo "CODECOV_TOKEN not set -- skipping Codecov upload."
