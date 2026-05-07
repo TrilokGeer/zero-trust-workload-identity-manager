@@ -44,12 +44,10 @@ spec:
       storage: 1Gi
 EOF
 
-    echo "Discovering CSV..."
+    echo "Discovering CSV from deployment ownerReference..."
     local csv
-    csv=$(oc get csv -n "${NAMESPACE}" -o name \
-        | grep zero-trust-workload-identity-manager \
-        | head -1 \
-        | sed 's|^clusterserviceversion.operators.coreos.com/||')
+    csv=$(oc get deployment "${DEPLOYMENT}" -n "${NAMESPACE}" \
+        -o jsonpath='{.metadata.ownerReferences[?(@.kind=="ClusterServiceVersion")].name}')
     if [[ -z "${csv}" ]]; then
         echo "Error: no CSV found for zero-trust-workload-identity-manager"
         exit 1
