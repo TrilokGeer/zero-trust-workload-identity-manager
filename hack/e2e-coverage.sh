@@ -94,9 +94,6 @@ collect() {
     # Clean up any leftover extractor pod from a prior run
     oc delete pod coverage-extractor -n "${NAMESPACE}" --ignore-not-found --wait=false 2>/dev/null || true
 
-    # Ensure the extractor pod is always cleaned up, even if the script fails
-    trap 'oc delete pod coverage-extractor -n "${NAMESPACE}" --ignore-not-found --wait=false 2>/dev/null || true' EXIT
-
     echo "Creating extractor pod to access PVC data..."
     oc run coverage-extractor \
         --image="${EXTRACTOR_IMAGE}" \
