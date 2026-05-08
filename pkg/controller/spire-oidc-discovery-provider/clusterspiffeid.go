@@ -51,6 +51,12 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 		}
 		r.log.Info("Created OIDC ClusterSPIFFEID", "name", desiredOIDC.Name)
 	} else {
+		if conflictErr := utils.CheckResourceConflict(existingOIDC); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return conflictErr
+		}
 		// Resource exists, check if we need to update
 		if utils.ResourceNeedsUpdate(existingOIDC, desiredOIDC) {
 			if createOnlyMode {
@@ -107,6 +113,12 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 		}
 		r.log.Info("Created Default ClusterSPIFFEID", "name", desiredDefault.Name)
 	} else {
+		if conflictErr := utils.CheckResourceConflict(existingDefault); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return conflictErr
+		}
 		// Resource exists, check if we need to update
 		if utils.ResourceNeedsUpdate(existingDefault, desiredDefault) {
 			if createOnlyMode {

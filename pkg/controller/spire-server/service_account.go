@@ -60,6 +60,13 @@ func (r *SpireServerReconciler) reconcileServiceAccount(ctx context.Context, ser
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(ServiceAccountAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("ServiceAccount exists, skipping update due to create-only mode", "name", desired.Name)

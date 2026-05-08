@@ -104,6 +104,14 @@ func (r *SpireAgentReconciler) reconcileSCC(ctx context.Context, agent *v1alpha1
 		return nil
 	}
 
+	// Resource exists - check ownership before proceeding
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(SecurityContextConstraintsAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Preserve fields set by OpenShift from existing resource BEFORE comparison
 	desired.ResourceVersion = existing.ResourceVersion
 	desired.Priority = existing.Priority

@@ -128,6 +128,11 @@ func (r *SpireServerReconciler) reconcileRoute(ctx context.Context, server *v1al
 					metav1.ConditionFalse)
 				return err
 			}
+		} else if conflictErr := utils.CheckResourceConflict(&existingRoute); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return conflictErr
 		} else if checkFederationRouteConflict(&existingRoute, route) {
 			if createOnlyMode {
 				r.log.Info("Skipping federation route update due to create-only mode")

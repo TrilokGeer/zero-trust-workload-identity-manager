@@ -77,7 +77,14 @@ func (r *SpireAgentReconciler) reconcileClusterRole(ctx context.Context, agent *
 		return nil
 	}
 
-	// Resource exists, check if we need to update
+	// Resource exists - check ownership before proceeding
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	if createOnlyMode {
 		r.log.V(1).Info("ClusterRole exists, skipping update due to create-only mode", "name", desired.Name)
 		return nil
@@ -142,7 +149,14 @@ func (r *SpireAgentReconciler) reconcileClusterRoleBinding(ctx context.Context, 
 		return nil
 	}
 
-	// Resource exists, check if we need to update
+	// Resource exists - check ownership before proceeding
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	if createOnlyMode {
 		r.log.V(1).Info("ClusterRoleBinding exists, skipping update due to create-only mode", "name", desired.Name)
 		return nil

@@ -41,7 +41,17 @@ func (r *SpireAgentReconciler) reconcileDaemonSet(ctx context.Context, agent *v1
 			return fmt.Errorf("failed to create DaemonSet: %w", err)
 		}
 		r.log.Info("Created spire agent DaemonSet")
-	} else if err == nil && needsUpdate(existingSpireAgentDaemonSet, *spireAgentDaemonset) {
+	} else if err == nil {
+		if conflictErr := utils.CheckResourceConflict(&existingSpireAgentDaemonSet); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return conflictErr
+		}
+		if !needsUpdate(existingSpireAgentDaemonSet, *spireAgentDaemonset) {
+			statusMgr.CheckDaemonSetHealth(ctx, spireAgentDaemonset.Name, spireAgentDaemonset.Namespace, DaemonSetAvailable)
+			return nil
+		}
 		if createOnlyMode {
 			r.log.Info("Skipping DaemonSet update due to create-only mode")
 		} else {
@@ -55,7 +65,7 @@ func (r *SpireAgentReconciler) reconcileDaemonSet(ctx context.Context, agent *v1
 			}
 			r.log.Info("Updated spire agent DaemonSet")
 		}
-	} else if err != nil {
+	} else {
 		r.log.Error(err, "failed to get spire-agent daemonset")
 		statusMgr.AddCondition(DaemonSetAvailable, "SpireAgentDaemonSetGetFailed",
 			err.Error(),

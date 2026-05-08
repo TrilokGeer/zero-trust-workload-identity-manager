@@ -60,6 +60,14 @@ func (r *SpiffeCsiReconciler) reconcileCSIDriver(ctx context.Context, driver *v1
 		return nil
 	}
 
+	// Resource exists - check ownership before proceeding
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(CSIDriverAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("CSIDriver exists, skipping update due to create-only mode", "name", desired.Name)

@@ -106,6 +106,13 @@ func (r *SpireServerReconciler) reconcileClusterRole(ctx context.Context, server
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("ClusterRole exists, skipping update due to create-only mode", "name", desired.Name)
@@ -169,6 +176,13 @@ func (r *SpireServerReconciler) reconcileClusterRoleBinding(ctx context.Context,
 
 		r.log.Info("Created ClusterRoleBinding", "name", desired.Name)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -236,6 +250,13 @@ func (r *SpireServerReconciler) reconcileSpireBundleRole(ctx context.Context, se
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("Role exists, skipping update due to create-only mode", "name", desired.Name)
@@ -299,6 +320,13 @@ func (r *SpireServerReconciler) reconcileSpireBundleRoleBinding(ctx context.Cont
 
 		r.log.Info("Created RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -366,6 +394,13 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRole(ctx contex
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("ClusterRole exists, skipping update due to create-only mode", "name", desired.Name)
@@ -429,6 +464,13 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRoleBinding(ctx
 
 		r.log.Info("Created ClusterRoleBinding", "name", desired.Name)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -496,6 +538,13 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRole(ctx context.Context,
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("Role exists, skipping update due to create-only mode", "name", desired.Name)
@@ -559,6 +608,13 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRoleBinding(ctx context.C
 
 		r.log.Info("Created RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -720,6 +776,13 @@ func (r *SpireServerReconciler) reconcileExternalCertRole(ctx context.Context, s
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("External cert Role exists, skipping update due to create-only mode", "name", desired.Name)
@@ -783,6 +846,13 @@ func (r *SpireServerReconciler) reconcileExternalCertRoleBinding(ctx context.Con
 
 		r.log.Info("Created external cert RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update

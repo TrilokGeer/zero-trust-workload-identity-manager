@@ -59,6 +59,11 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileRoute(ctx context.Contex
 					metav1.ConditionFalse)
 				return err
 			}
+		} else if conflictErr := utils.CheckResourceConflict(&existingRoute); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return conflictErr
 		} else if checkRouteConflict(&existingRoute, route) {
 			r.log.Info("Found conflict in routes, updating route")
 			route.ResourceVersion = existingRoute.ResourceVersion

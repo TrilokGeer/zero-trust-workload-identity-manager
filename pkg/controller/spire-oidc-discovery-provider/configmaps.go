@@ -49,22 +49,30 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileConfigMap(ctx context.Co
 			return "", err
 		}
 		r.log.Info("Created ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
-	} else if err == nil && (utils.GenerateMapHash(existingOidcCm.Data) != utils.GenerateMapHash(cm.Data) ||
-		!equality.Semantic.DeepEqual(existingOidcCm.Labels, cm.Labels)) {
-		if createOnlyMode {
-			r.log.Info("Skipping ConfigMap update due to create-only mode", "Namespace", cm.Namespace, "Name", cm.Name)
-		} else {
-			cm.ResourceVersion = existingOidcCm.ResourceVersion
-			if err = r.ctrlClient.Update(ctx, cm); err != nil {
-				r.log.Error(err, "Failed to update ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
-				statusMgr.AddCondition(ConfigMapAvailable, "SpireOIDCConfigMapCreationFailed",
-					err.Error(),
-					metav1.ConditionFalse)
-				return "", err
-			}
-			r.log.Info("Updated ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
+	} else if err == nil {
+		if conflictErr := utils.CheckResourceConflict(&existingOidcCm); conflictErr != nil {
+			r.log.Error(conflictErr, "resource conflict detected")
+			statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
+				conflictErr.Error(), metav1.ConditionFalse)
+			return "", conflictErr
 		}
-	} else if err != nil {
+		if utils.GenerateMapHash(existingOidcCm.Data) != utils.GenerateMapHash(cm.Data) ||
+			!equality.Semantic.DeepEqual(existingOidcCm.Labels, cm.Labels) {
+			if createOnlyMode {
+				r.log.Info("Skipping ConfigMap update due to create-only mode", "Namespace", cm.Namespace, "Name", cm.Name)
+			} else {
+				cm.ResourceVersion = existingOidcCm.ResourceVersion
+				if err = r.ctrlClient.Update(ctx, cm); err != nil {
+					r.log.Error(err, "Failed to update ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
+					statusMgr.AddCondition(ConfigMapAvailable, "SpireOIDCConfigMapCreationFailed",
+						err.Error(),
+						metav1.ConditionFalse)
+					return "", err
+				}
+				r.log.Info("Updated ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
+			}
+		}
+	} else {
 		r.log.Error(err, "Failed to get ConfigMap")
 		statusMgr.AddCondition(ConfigMapAvailable, "SpireOIDCConfigMapCreationFailed",
 			err.Error(),

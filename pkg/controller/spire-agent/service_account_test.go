@@ -164,6 +164,7 @@ func TestReconcileServiceAccount(t *testing.T) {
 						Name:            "spire-agent",
 						Namespace:       utils.GetOperatorNamespace(),
 						ResourceVersion: "123",
+						Labels: map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
@@ -207,7 +208,7 @@ func TestReconcileServiceAccount(t *testing.T) {
 						Name:            "spire-agent",
 						Namespace:       utils.GetOperatorNamespace(),
 						ResourceVersion: "123",
-						Labels:          map[string]string{"old-label": "old-value"},
+						Labels:          map[string]string{"old-label": "old-value", utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
@@ -236,7 +237,7 @@ func TestReconcileServiceAccount(t *testing.T) {
 						Name:            "spire-agent",
 						Namespace:       utils.GetOperatorNamespace(),
 						ResourceVersion: "123",
-						Labels:          map[string]string{"old-label": "old-value"},
+						Labels:          map[string]string{"old-label": "old-value", utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
@@ -249,6 +250,28 @@ func TestReconcileServiceAccount(t *testing.T) {
 			},
 			expectError:  true,
 			expectUpdate: true,
+		},
+		{
+			name: "resource conflict - existing resource not managed by operator",
+			agent: &v1alpha1.SpireAgent{
+				ObjectMeta: metav1.ObjectMeta{Name: "cluster", UID: "test-uid"},
+			},
+			setupClient: func(fc *fakes.FakeCustomCtrlClient) {
+				existingSA := &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "spire-agent",
+						Namespace:       utils.GetOperatorNamespace(),
+						ResourceVersion: "123",
+					},
+				}
+				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+					if sa, ok := obj.(*corev1.ServiceAccount); ok {
+						*sa = *existingSA
+					}
+					return nil
+				}
+			},
+			expectError: true,
 		},
 		{
 			name: "set controller ref error",

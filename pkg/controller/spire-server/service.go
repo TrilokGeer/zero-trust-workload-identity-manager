@@ -75,6 +75,13 @@ func (r *SpireServerReconciler) reconcileSpireServerService(ctx context.Context,
 		return nil
 	}
 
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(ServiceAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
+	}
+
 	// Resource exists, check if we need to update
 	if createOnlyMode {
 		r.log.V(1).Info("Service exists, skipping update due to create-only mode", "name", desired.Name)
@@ -156,6 +163,13 @@ func (r *SpireServerReconciler) reconcileSpireControllerManagerService(ctx conte
 
 		r.log.Info("Created Service", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
+	}
+
+	if err := utils.CheckResourceConflict(existing); err != nil {
+		r.log.Error(err, "resource conflict detected")
+		statusMgr.AddCondition(ServiceAvailable, v1alpha1.ReasonResourceConflict,
+			err.Error(), metav1.ConditionFalse)
+		return err
 	}
 
 	// Resource exists, check if we need to update
