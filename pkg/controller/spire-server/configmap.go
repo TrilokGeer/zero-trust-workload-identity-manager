@@ -155,11 +155,14 @@ func (r *SpireServerReconciler) reconcileSpireControllerManagerConfigMap(ctx con
 						metav1.ConditionFalse)
 					return "", fmt.Errorf("failed to update ConfigMap: %w", err)
 				}
+				r.log.Info("Updated ConfigMap with new config")
 			}
-			r.log.Info("Updated ConfigMap with new config")
 		}
 	} else {
-		r.log.Error(err, "failed to update spire controller manager config map")
+		r.log.Error(err, "failed to get spire controller manager config map")
+		statusMgr.AddCondition(ControllerManagerConfigAvailable, "SpireControllerManagerConfigMapGetFailed",
+			err.Error(),
+			metav1.ConditionFalse)
 		return "", err
 	}
 

@@ -554,6 +554,9 @@ func TestReconcileClusterRole(t *testing.T) {
 			if tt.expectCreate && fakeClient.CreateCallCount() != 1 {
 				t.Errorf("Expected Create to be called once, called %d times", fakeClient.CreateCallCount())
 			}
+			if !tt.expectCreate && !tt.expectError && fakeClient.CreateCallCount() != 0 {
+				t.Errorf("Expected Create not to be called, called %d times", fakeClient.CreateCallCount())
+			}
 			if tt.expectUpdate && fakeClient.UpdateCallCount() != 1 {
 				t.Errorf("Expected Update to be called once, called %d times", fakeClient.UpdateCallCount())
 			}
