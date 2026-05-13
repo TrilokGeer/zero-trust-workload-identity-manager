@@ -95,6 +95,13 @@ func (r *SpireServerReconciler) reconcileClusterRole(ctx context.Context, server
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create cluster role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ClusterRole: %v", err),
@@ -104,13 +111,6 @@ func (r *SpireServerReconciler) reconcileClusterRole(ctx context.Context, server
 
 		r.log.Info("Created ClusterRole", "name", desired.Name)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -167,6 +167,13 @@ func (r *SpireServerReconciler) reconcileClusterRoleBinding(ctx context.Context,
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create cluster role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ClusterRoleBinding: %v", err),
@@ -176,13 +183,6 @@ func (r *SpireServerReconciler) reconcileClusterRoleBinding(ctx context.Context,
 
 		r.log.Info("Created ClusterRoleBinding", "name", desired.Name)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -239,6 +239,13 @@ func (r *SpireServerReconciler) reconcileSpireBundleRole(ctx context.Context, se
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create spire-bundle role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Bundle Role: %v", err),
@@ -248,13 +255,6 @@ func (r *SpireServerReconciler) reconcileSpireBundleRole(ctx context.Context, se
 
 		r.log.Info("Created Role", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -311,6 +311,13 @@ func (r *SpireServerReconciler) reconcileSpireBundleRoleBinding(ctx context.Cont
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create spire-bundle role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Bundle RoleBinding: %v", err),
@@ -320,13 +327,6 @@ func (r *SpireServerReconciler) reconcileSpireBundleRoleBinding(ctx context.Cont
 
 		r.log.Info("Created RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -383,6 +383,13 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRole(ctx contex
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create controller manager cluster role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Controller Manager ClusterRole: %v", err),
@@ -392,13 +399,6 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRole(ctx contex
 
 		r.log.Info("Created ClusterRole", "name", desired.Name)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -455,6 +455,13 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRoleBinding(ctx
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create controller manager cluster role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Controller Manager ClusterRoleBinding: %v", err),
@@ -464,13 +471,6 @@ func (r *SpireServerReconciler) reconcileControllerManagerClusterRoleBinding(ctx
 
 		r.log.Info("Created ClusterRoleBinding", "name", desired.Name)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -527,6 +527,13 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRole(ctx context.Context,
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create leader election role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Leader Election Role: %v", err),
@@ -536,13 +543,6 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRole(ctx context.Context,
 
 		r.log.Info("Created Role", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -599,6 +599,13 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRoleBinding(ctx context.C
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create leader election role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create Leader Election RoleBinding: %v", err),
@@ -608,13 +615,6 @@ func (r *SpireServerReconciler) reconcileLeaderElectionRoleBinding(ctx context.C
 
 		r.log.Info("Created RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -765,6 +765,13 @@ func (r *SpireServerReconciler) reconcileExternalCertRole(ctx context.Context, s
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create external cert role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create external cert Role: %v", err),
@@ -774,13 +781,6 @@ func (r *SpireServerReconciler) reconcileExternalCertRole(ctx context.Context, s
 
 		r.log.Info("Created external cert Role", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -837,6 +837,13 @@ func (r *SpireServerReconciler) reconcileExternalCertRoleBinding(ctx context.Con
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create external cert role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create external cert RoleBinding: %v", err),
@@ -846,13 +853,6 @@ func (r *SpireServerReconciler) reconcileExternalCertRoleBinding(ctx context.Con
 
 		r.log.Info("Created external cert RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update

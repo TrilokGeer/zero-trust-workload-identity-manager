@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func TestCheckResourceConflict(t *testing.T) {
@@ -107,6 +110,44 @@ func TestCheckResourceConflict(t *testing.T) {
 				if err != nil {
 					t.Errorf("expected no error but got: %v", err)
 				}
+			}
+		})
+	}
+}
+
+func TestIsResourceConflictOnCreate(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "AlreadyExists error is a conflict",
+			err:      kerrors.NewAlreadyExists(schema.GroupResource{Group: "", Resource: "configmaps"}, "spire-server"),
+			expected: true,
+		},
+		{
+			name:     "NotFound error is not a conflict",
+			err:      kerrors.NewNotFound(schema.GroupResource{Group: "", Resource: "configmaps"}, "spire-server"),
+			expected: false,
+		},
+		{
+			name:     "generic error is not a conflict",
+			err:      fmt.Errorf("connection refused"),
+			expected: false,
+		},
+		{
+			name:     "nil error is not a conflict",
+			err:      nil,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsResourceConflictOnCreate(tt.err)
+			if result != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
 		})
 	}

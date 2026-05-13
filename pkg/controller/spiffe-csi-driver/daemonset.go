@@ -35,6 +35,13 @@ func (r *SpiffeCsiReconciler) reconcileDaemonSet(ctx context.Context, driver *v1
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: spiffeCsiDaemonset.Name, Namespace: spiffeCsiDaemonset.Namespace}, &existingSpiffeCsiDaemonSet)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spiffeCsiDaemonset); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(spiffeCsiDaemonset.GetNamespace(), spiffeCsiDaemonset.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "Failed to create SpiffeCsiDaemon set")
 			statusMgr.AddCondition(DaemonSetAvailable, "SpiffeCSIDaemonSetCreationFailed",
 				err.Error(),
@@ -43,12 +50,6 @@ func (r *SpiffeCsiReconciler) reconcileDaemonSet(ctx context.Context, driver *v1
 		}
 		r.log.Info("Created spiffe csi DaemonSet")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpiffeCsiDaemonSet); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		if !needsUpdate(existingSpiffeCsiDaemonSet, *spiffeCsiDaemonset) {
 			statusMgr.CheckDaemonSetHealth(ctx, spiffeCsiDaemonset.Name, spiffeCsiDaemonset.Namespace, DaemonSetAvailable)
 			return nil

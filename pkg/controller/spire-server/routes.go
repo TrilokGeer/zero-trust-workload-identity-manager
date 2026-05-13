@@ -108,6 +108,13 @@ func (r *SpireServerReconciler) reconcileRoute(ctx context.Context, server *v1al
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				if err = r.ctrlClient.Create(ctx, route); err != nil {
+					if utils.IsResourceConflictOnCreate(err) {
+						conflictErr := utils.ResourceConflictError(route.Namespace, route.Name)
+						r.log.Error(conflictErr, "resource conflict detected")
+						statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
+							conflictErr.Error(), metav1.ConditionFalse)
+						return conflictErr
+					}
 					r.log.Error(err, "Failed to create federation route")
 					statusMgr.AddCondition(RouteAvailable, "FederationRouteCreationFailed",
 						err.Error(),
@@ -128,11 +135,6 @@ func (r *SpireServerReconciler) reconcileRoute(ctx context.Context, server *v1al
 					metav1.ConditionFalse)
 				return err
 			}
-		} else if conflictErr := utils.CheckResourceConflict(&existingRoute); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
 		} else if checkFederationRouteConflict(&existingRoute, route) {
 			if createOnlyMode {
 				r.log.Info("Skipping federation route update due to create-only mode")

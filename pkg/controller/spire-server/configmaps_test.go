@@ -133,7 +133,7 @@ func TestGenerateSpireServerConfigMap(t *testing.T) {
 			}
 
 			// Verify config data exists
-			configData, exists := cm.Data["server.conf"]
+			configData, exists := cm.Data[utils.SpireServerConfigKey]
 			if !exists {
 				t.Fatal("Expected server.conf data to exist in ConfigMap")
 			}
@@ -356,7 +356,7 @@ func TestGenerateSpireServerConfigMapWithTTLFields(t *testing.T) {
 	}
 
 	// Verify config data exists
-	configData, exists := cm.Data["server.conf"]
+	configData, exists := cm.Data[utils.SpireServerConfigKey]
 	if !exists {
 		t.Fatal("Expected server.conf data to exist in ConfigMap")
 	}
@@ -619,7 +619,7 @@ func TestGenerateControllerManagerConfigMap(t *testing.T) {
 	}
 
 	// Check data
-	configData, exists := cm.Data["controller-manager-config.yaml"]
+	configData, exists := cm.Data[utils.SpireControllerManagerConfigKey]
 	if !exists {
 		t.Fatal("Expected controller-manager-config.yaml data to exist in ConfigMap")
 	}
@@ -1032,7 +1032,7 @@ func TestGenerateSpireServerConfigMapWithKeyTypes(t *testing.T) {
 			}
 
 			// Verify config data exists
-			configData, exists := cm.Data["server.conf"]
+			configData, exists := cm.Data[utils.SpireServerConfigKey]
 			if !exists {
 				t.Fatal("Expected server.conf data to exist in ConfigMap")
 			}
@@ -1391,7 +1391,7 @@ func TestReconcileSpireServerConfigMap(t *testing.T) {
 						ResourceVersion: "123",
 						Labels:          map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
-					Data: map[string]string{"server.conf": "old-config"},
+					Data: map[string]string{utils.SpireServerConfigKey: "old-config"},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 					if cm, ok := obj.(*corev1.ConfigMap); ok {
@@ -1414,7 +1414,7 @@ func TestReconcileSpireServerConfigMap(t *testing.T) {
 						ResourceVersion: "123",
 						Labels:          map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
-					Data: map[string]string{"server.conf": "old-config"},
+					Data: map[string]string{utils.SpireServerConfigKey: "old-config"},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 					if cm, ok := obj.(*corev1.ConfigMap); ok {
@@ -1437,7 +1437,7 @@ func TestReconcileSpireServerConfigMap(t *testing.T) {
 						ResourceVersion: "123",
 						Labels:          map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue},
 					},
-					Data: map[string]string{"server.conf": "old-config"},
+					Data: map[string]string{utils.SpireServerConfigKey: "old-config"},
 				}
 				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 					if cm, ok := obj.(*corev1.ConfigMap); ok {

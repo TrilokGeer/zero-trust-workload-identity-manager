@@ -34,6 +34,13 @@ func (r *SpireAgentReconciler) reconcileDaemonSet(ctx context.Context, agent *v1
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireAgentDaemonset.Name, Namespace: spireAgentDaemonset.Namespace}, &existingSpireAgentDaemonSet)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireAgentDaemonset); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(spireAgentDaemonset.GetNamespace(), spireAgentDaemonset.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create spire-agent daemonset")
 			statusMgr.AddCondition(DaemonSetAvailable, "SpireAgentDaemonSetCreationFailed",
 				err.Error(),
@@ -42,12 +49,6 @@ func (r *SpireAgentReconciler) reconcileDaemonSet(ctx context.Context, agent *v1
 		}
 		r.log.Info("Created spire agent DaemonSet")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpireAgentDaemonSet); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		if !needsUpdate(existingSpireAgentDaemonSet, *spireAgentDaemonset) {
 			statusMgr.CheckDaemonSetHealth(ctx, spireAgentDaemonset.Name, spireAgentDaemonset.Namespace, DaemonSetAvailable)
 			return nil

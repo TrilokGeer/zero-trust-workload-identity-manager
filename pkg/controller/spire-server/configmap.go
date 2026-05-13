@@ -56,6 +56,13 @@ func (r *SpireServerReconciler) reconcileSpireServerConfigMap(ctx context.Contex
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireServerConfigMap.Name, Namespace: spireServerConfigMap.Namespace}, &existingSpireServerCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireServerConfigMap); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(spireServerConfigMap.Namespace, spireServerConfigMap.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ServerConfigMapAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return "", conflictErr
+			}
 			statusMgr.AddCondition(ServerConfigMapAvailable, "SpireServerConfigMapGenerationFailed",
 				err.Error(),
 				metav1.ConditionFalse)
@@ -63,13 +70,7 @@ func (r *SpireServerReconciler) reconcileSpireServerConfigMap(ctx context.Contex
 		}
 		r.log.Info("Created spire server ConfigMap")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpireServerCM); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ServerConfigMapAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return "", conflictErr
-		}
-		if existingSpireServerCM.Data["server.conf"] != spireServerConfigMap.Data["server.conf"] ||
+		if existingSpireServerCM.Data[utils.SpireServerConfigKey] != spireServerConfigMap.Data[utils.SpireServerConfigKey] ||
 			!equality.Semantic.DeepEqual(existingSpireServerCM.Labels, spireServerConfigMap.Labels) {
 			if createOnlyMode {
 				r.log.Info("Skipping ConfigMap update due to create-only mode")
@@ -129,6 +130,13 @@ func (r *SpireServerReconciler) reconcileSpireControllerManagerConfigMap(ctx con
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireControllerManagerConfigMap.Name, Namespace: spireControllerManagerConfigMap.Namespace}, &existingSpireControllerManagerCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireControllerManagerConfigMap); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(spireControllerManagerConfigMap.Namespace, spireControllerManagerConfigMap.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ControllerManagerConfigAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return "", conflictErr
+			}
 			r.log.Error(err, "failed to create spire controller manager config map")
 			statusMgr.AddCondition(ControllerManagerConfigAvailable, "SpireControllerManagerConfigMapGenerationFailed",
 				err.Error(),
@@ -137,13 +145,7 @@ func (r *SpireServerReconciler) reconcileSpireControllerManagerConfigMap(ctx con
 		}
 		r.log.Info("Created spire controller manager ConfigMap")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpireControllerManagerCM); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ControllerManagerConfigAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return "", conflictErr
-		}
-		if existingSpireControllerManagerCM.Data["controller-manager-config.yaml"] != spireControllerManagerConfigMap.Data["controller-manager-config.yaml"] ||
+		if existingSpireControllerManagerCM.Data[utils.SpireControllerManagerConfigKey] != spireControllerManagerConfigMap.Data[utils.SpireControllerManagerConfigKey] ||
 			!equality.Semantic.DeepEqual(existingSpireControllerManagerCM.Labels, spireControllerManagerConfigMap.Labels) {
 			if createOnlyMode {
 				r.log.Info("Skipping spire controller manager ConfigMap update due to create-only mode")
@@ -231,7 +233,7 @@ func generateSpireServerConfigMap(config *v1alpha1.SpireServerSpec, ztwim *v1alp
 			Labels:    utils.SpireServerLabels(config.Labels),
 		},
 		Data: map[string]string{
-			"server.conf": string(confJSON),
+			utils.SpireServerConfigKey: string(confJSON),
 		},
 	}
 
@@ -559,7 +561,7 @@ func generateControllerManagerConfigMap(configYAML string) *corev1.ConfigMap {
 			Labels:    utils.SpireControllerManagerLabels(nil),
 		},
 		Data: map[string]string{
-			"controller-manager-config.yaml": configYAML,
+			utils.SpireControllerManagerConfigKey: configYAML,
 		},
 	}
 }

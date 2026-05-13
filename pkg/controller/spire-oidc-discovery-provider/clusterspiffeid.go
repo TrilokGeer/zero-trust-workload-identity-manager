@@ -43,6 +43,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desiredOIDC); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desiredOIDC.GetNamespace(), desiredOIDC.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "Failed to create oidc cluster spiffe id")
 			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, "SpireClusterSpiffeIDCreationFailed",
 				err.Error(),
@@ -51,12 +58,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 		}
 		r.log.Info("Created OIDC ClusterSPIFFEID", "name", desiredOIDC.Name)
 	} else {
-		if conflictErr := utils.CheckResourceConflict(existingOIDC); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		// Resource exists, check if we need to update
 		if utils.ResourceNeedsUpdate(existingOIDC, desiredOIDC) {
 			if createOnlyMode {
@@ -105,6 +106,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desiredDefault); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desiredDefault.GetNamespace(), desiredDefault.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "Failed to create DefaultFallbackClusterSPIFFEID")
 			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, "SpireClusterSpiffeIDCreationFailed",
 				err.Error(),
@@ -113,12 +121,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileClusterSpiffeIDs(ctx con
 		}
 		r.log.Info("Created Default ClusterSPIFFEID", "name", desiredDefault.Name)
 	} else {
-		if conflictErr := utils.CheckResourceConflict(existingDefault); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ClusterSPIFFEIDAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		// Resource exists, check if we need to update
 		if utils.ResourceNeedsUpdate(existingDefault, desiredDefault) {
 			if createOnlyMode {

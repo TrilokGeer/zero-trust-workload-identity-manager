@@ -46,6 +46,13 @@ func (r *SpireServerReconciler) reconcileWebhook(ctx context.Context, server *v1
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ValidatingWebhookAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create validating webhook")
 			statusMgr.AddCondition(ValidatingWebhookAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ValidatingWebhookConfiguration: %v", err),
@@ -58,13 +65,6 @@ func (r *SpireServerReconciler) reconcileWebhook(ctx context.Context, server *v1
 			"All ValidatingWebhookConfiguration resources available",
 			metav1.ConditionTrue)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(ValidatingWebhookAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update

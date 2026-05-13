@@ -71,6 +71,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileExternalCertRole(ctx con
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create external cert role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create external cert Role: %v", err),
@@ -80,14 +87,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileExternalCertRole(ctx con
 
 		r.log.Info("Created external cert Role", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	// Resource exists - check ownership before proceeding
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update
@@ -144,6 +143,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileExternalCertRoleBinding(
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create external cert role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create external cert RoleBinding: %v", err),
@@ -153,14 +159,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileExternalCertRoleBinding(
 
 		r.log.Info("Created external cert RoleBinding", "name", desired.Name, "namespace", desired.Namespace)
 		return nil
-	}
-
-	// Resource exists - check ownership before proceeding
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update

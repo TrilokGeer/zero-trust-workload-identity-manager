@@ -42,6 +42,13 @@ func (r *SpireAgentReconciler) reconcileConfigMap(ctx context.Context, agent *v1
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireAgentConfigMap.Name, Namespace: spireAgentConfigMap.Namespace}, &existingSpireAgentCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireAgentConfigMap); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(spireAgentConfigMap.GetNamespace(), spireAgentConfigMap.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return "", conflictErr
+			}
 			r.log.Error(err, "failed to create spire-agent config map")
 			statusMgr.AddCondition(ConfigMapAvailable, "SpireAgentConfigMapGenerationFailed",
 				err.Error(),
@@ -50,13 +57,7 @@ func (r *SpireAgentReconciler) reconcileConfigMap(ctx context.Context, agent *v1
 		}
 		r.log.Info("Created spire agent ConfigMap")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpireAgentCM); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return "", conflictErr
-		}
-		if existingSpireAgentCM.Data["agent.conf"] != spireAgentConfigMap.Data["agent.conf"] ||
+		if existingSpireAgentCM.Data[utils.SpireAgentConfigKey] != spireAgentConfigMap.Data[utils.SpireAgentConfigKey] ||
 			!equality.Semantic.DeepEqual(existingSpireAgentCM.Labels, spireAgentConfigMap.Labels) {
 			if createOnlyMode {
 				r.log.Info("Skipping ConfigMap update due to create-only mode")
@@ -216,7 +217,7 @@ func generateSpireAgentConfigMap(spireAgentConfig *v1alpha1.SpireAgent, ztwim *v
 			},
 		},
 		Data: map[string]string{
-			"agent.conf": string(agentConfigJSON),
+			utils.SpireAgentConfigKey: string(agentConfigJSON),
 		},
 	}
 

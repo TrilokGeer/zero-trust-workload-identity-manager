@@ -90,6 +90,13 @@ func (r *SpireAgentReconciler) reconcileSCC(ctx context.Context, agent *v1alpha1
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(SecurityContextConstraintsAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "Failed to create SpireAgentSCC")
 			statusMgr.AddCondition(SecurityContextConstraintsAvailable, "SpireAgentSCCCreationFailed",
 				err.Error(),
@@ -102,14 +109,6 @@ func (r *SpireAgentReconciler) reconcileSCC(ctx context.Context, agent *v1alpha1
 			"Spire Agent SCC resources applied",
 			metav1.ConditionTrue)
 		return nil
-	}
-
-	// Resource exists - check ownership before proceeding
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(SecurityContextConstraintsAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Preserve fields set by OpenShift from existing resource BEFORE comparison

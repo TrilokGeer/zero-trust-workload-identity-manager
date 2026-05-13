@@ -499,24 +499,6 @@ func TestReconcileClusterRole(t *testing.T) {
 			expectUpdate: true,
 		},
 		{
-			name:   "resource conflict - existing resource not managed by operator",
-			server: createRBACTestServer(),
-			setupClient: func(fc *fakes.FakeCustomCtrlClient) {
-				existingCR := &rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{Name: "spire-server", ResourceVersion: "123"},
-				}
-				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
-					if cr, ok := obj.(*rbacv1.ClusterRole); ok {
-						*cr = *existingCR
-					}
-					return nil
-				}
-			},
-			expectError:  true,
-			expectCreate: false,
-			expectUpdate: false,
-		},
-		{
 			name:           "set controller ref error",
 			server:         createRBACTestServer(),
 			setupClient:    func(fc *fakes.FakeCustomCtrlClient) {},

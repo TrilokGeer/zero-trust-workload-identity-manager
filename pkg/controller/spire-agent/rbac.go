@@ -66,6 +66,13 @@ func (r *SpireAgentReconciler) reconcileClusterRole(ctx context.Context, agent *
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create cluster role")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ClusterRole: %v", err),
@@ -75,14 +82,6 @@ func (r *SpireAgentReconciler) reconcileClusterRole(ctx context.Context, agent *
 
 		r.log.Info("Created ClusterRole", "name", desired.Name)
 		return nil
-	}
-
-	// Resource exists - check ownership before proceeding
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	if createOnlyMode {
@@ -138,6 +137,13 @@ func (r *SpireAgentReconciler) reconcileClusterRoleBinding(ctx context.Context, 
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create cluster role binding")
 			statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ClusterRoleBinding: %v", err),
@@ -147,14 +153,6 @@ func (r *SpireAgentReconciler) reconcileClusterRoleBinding(ctx context.Context, 
 
 		r.log.Info("Created ClusterRoleBinding", "name", desired.Name)
 		return nil
-	}
-
-	// Resource exists - check ownership before proceeding
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(RBACAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	if createOnlyMode {

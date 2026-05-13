@@ -1257,7 +1257,7 @@ func TestReconcile_FullFlow_AllScenarios(t *testing.T) {
 						v.Namespace = key.Namespace
 						v.Labels = map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue}
 						if tt.configMapDiff {
-							v.Data = map[string]string{"agent.conf": "old-config"}
+							v.Data = map[string]string{utils.SpireAgentConfigKey: "old-config"}
 						}
 						return nil
 					}
@@ -1383,7 +1383,7 @@ func TestReconcileConfigMap_AllScenarios(t *testing.T) {
 						v.Namespace = key.Namespace
 						v.Labels = map[string]string{utils.AppManagedByLabelKey: utils.AppManagedByLabelValue}
 						if tt.cmDiff {
-							v.Data = map[string]string{"agent.conf": "old-config"}
+							v.Data = map[string]string{utils.SpireAgentConfigKey: "old-config"}
 						}
 						return nil
 					}

@@ -44,6 +44,13 @@ func (r *SpireServerReconciler) reconcileStatefulSet(ctx context.Context, server
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: sts.Name, Namespace: sts.Namespace}, &existingSTS)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, sts); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(sts.Namespace, sts.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(StatefulSetAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			statusMgr.AddCondition(StatefulSetAvailable, "SpireServerStatefulSetCreationFailed",
 				err.Error(),
 				metav1.ConditionFalse)
@@ -51,12 +58,6 @@ func (r *SpireServerReconciler) reconcileStatefulSet(ctx context.Context, server
 		}
 		r.log.Info("Created spire server StatefulSet")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSTS); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(StatefulSetAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		if needsUpdate(existingSTS, *sts) {
 			if createOnlyMode {
 				r.log.Info("Skipping StatefulSet update due to create-only mode")

@@ -46,6 +46,13 @@ func (r *SpireServerReconciler) reconcileServiceAccount(ctx context.Context, ser
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(desired.Namespace, desired.Name)
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ServiceAccountAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "failed to create service account")
 			statusMgr.AddCondition(ServiceAccountAvailable, v1alpha1.ReasonFailed,
 				fmt.Sprintf("Failed to create ServiceAccount: %v", err),
@@ -58,13 +65,6 @@ func (r *SpireServerReconciler) reconcileServiceAccount(ctx context.Context, ser
 			"All ServiceAccount resources available",
 			metav1.ConditionTrue)
 		return nil
-	}
-
-	if err := utils.CheckResourceConflict(existing); err != nil {
-		r.log.Error(err, "resource conflict detected")
-		statusMgr.AddCondition(ServiceAccountAvailable, v1alpha1.ReasonResourceConflict,
-			err.Error(), metav1.ConditionFalse)
-		return err
 	}
 
 	// Resource exists, check if we need to update

@@ -34,6 +34,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileDeployment(ctx context.C
 	}, &existingSpireOidcDeployment)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, deployment); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(deployment.GetNamespace(), deployment.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(DeploymentAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return conflictErr
+			}
 			r.log.Error(err, "Failed to create spire oidc discovery provider deployment")
 			statusMgr.AddCondition(DeploymentAvailable, "SpireOIDCDeploymentCreationFailed",
 				err.Error(),
@@ -42,12 +49,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileDeployment(ctx context.C
 		}
 		r.log.Info("Created spire oidc discovery provider deployment")
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingSpireOidcDeployment); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(DeploymentAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
-		}
 		if needsUpdate(existingSpireOidcDeployment, *deployment) {
 			if createOnlyMode {
 				r.log.Info("Skipping Deployment update due to create-only mode")

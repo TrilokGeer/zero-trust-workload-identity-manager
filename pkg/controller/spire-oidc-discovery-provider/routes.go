@@ -39,6 +39,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileRoute(ctx context.Contex
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				if err = r.ctrlClient.Create(ctx, route); err != nil {
+					if utils.IsResourceConflictOnCreate(err) {
+						conflictErr := utils.ResourceConflictError(route.GetNamespace(), route.GetName())
+						r.log.Error(conflictErr, "resource conflict detected")
+						statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
+							conflictErr.Error(), metav1.ConditionFalse)
+						return conflictErr
+					}
 					r.log.Error(err, "Failed to create route")
 					statusMgr.AddCondition(RouteAvailable, "ManagedRouteCreationFailed",
 						err.Error(),
@@ -59,11 +66,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileRoute(ctx context.Contex
 					metav1.ConditionFalse)
 				return err
 			}
-		} else if conflictErr := utils.CheckResourceConflict(&existingRoute); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return conflictErr
 		} else if checkRouteConflict(&existingRoute, route) {
 			r.log.Info("Found conflict in routes, updating route")
 			route.ResourceVersion = existingRoute.ResourceVersion

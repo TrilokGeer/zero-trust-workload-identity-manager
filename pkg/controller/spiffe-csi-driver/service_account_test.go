@@ -190,26 +190,17 @@ func TestReconcileServiceAccount(t *testing.T) {
 			expectUpdate: true,
 		},
 		{
-			name: "resource conflict - existing resource not managed by operator",
+			name: "resource conflict - create returns AlreadyExists",
 			driver: &v1alpha1.SpiffeCSIDriver{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster", UID: "test-uid"},
 			},
 			setupClient: func(fc *fakes.FakeCustomCtrlClient) {
-				existingSA := &corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "spire-spiffe-csi-driver",
-						Namespace:       utils.GetOperatorNamespace(),
-						ResourceVersion: "123",
-					},
-				}
-				fc.GetStub = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
-					if sa, ok := obj.(*corev1.ServiceAccount); ok {
-						*sa = *existingSA
-					}
-					return nil
-				}
+				fc.GetReturns(kerrors.NewNotFound(schema.GroupResource{}, "spire-spiffe-csi-driver"))
+				fc.CreateReturns(kerrors.NewAlreadyExists(schema.GroupResource{Resource: "serviceaccounts"}, "spire-spiffe-csi-driver"))
 			},
-			expectError: true,
+			expectError:  true,
+			expectCreate: true,
+			expectUpdate: false,
 		},
 		{
 			name: "set controller ref error",

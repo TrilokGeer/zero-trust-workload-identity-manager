@@ -42,6 +42,13 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileConfigMap(ctx context.Co
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, &existingOidcCm)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, cm); err != nil {
+			if utils.IsResourceConflictOnCreate(err) {
+				conflictErr := utils.ResourceConflictError(cm.GetNamespace(), cm.GetName())
+				r.log.Error(conflictErr, "resource conflict detected")
+				statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
+					conflictErr.Error(), metav1.ConditionFalse)
+				return "", conflictErr
+			}
 			r.log.Error(err, "Failed to create ConfigMap")
 			statusMgr.AddCondition(ConfigMapAvailable, "SpireOIDCConfigMapCreationFailed",
 				err.Error(),
@@ -50,12 +57,6 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileConfigMap(ctx context.Co
 		}
 		r.log.Info("Created ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
 	} else if err == nil {
-		if conflictErr := utils.CheckResourceConflict(&existingOidcCm); conflictErr != nil {
-			r.log.Error(conflictErr, "resource conflict detected")
-			statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
-				conflictErr.Error(), metav1.ConditionFalse)
-			return "", conflictErr
-		}
 		if utils.GenerateMapHash(existingOidcCm.Data) != utils.GenerateMapHash(cm.Data) ||
 			!equality.Semantic.DeepEqual(existingOidcCm.Labels, cm.Labels) {
 			if createOnlyMode {

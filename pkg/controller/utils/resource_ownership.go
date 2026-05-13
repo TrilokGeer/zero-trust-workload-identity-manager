@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,10 +15,20 @@ func CheckResourceConflict(existing client.Object) error {
 	if labels != nil && labels[AppManagedByLabelKey] == AppManagedByLabelValue {
 		return nil
 	}
-	ns := existing.GetNamespace()
-	name := existing.GetName()
-	if ns != "" {
-		return fmt.Errorf("resource %s/%s already exists but is not managed by the operator", ns, name)
+	return ResourceConflictError(existing.GetNamespace(), existing.GetName())
+}
+
+// IsResourceConflictOnCreate checks if a Create error is an AlreadyExists error,
+// which indicates a naming conflict with a pre-existing resource not visible in
+// the operator's label-filtered cache.
+func IsResourceConflictOnCreate(err error) bool {
+	return kerrors.IsAlreadyExists(err)
+}
+
+// ResourceConflictError returns a formatted error for a resource conflict.
+func ResourceConflictError(namespace, name string) error {
+	if namespace != "" {
+		return fmt.Errorf("resource %s/%s already exists but is not managed by the operator", namespace, name)
 	}
 	return fmt.Errorf("resource %s already exists but is not managed by the operator", name)
 }
