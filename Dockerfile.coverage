@@ -18,6 +18,7 @@ RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
 
 FROM registry.access.redhat.com/ubi9-minimal:9.4
 WORKDIR /
+RUN microdnf install -y tar && microdnf clean all
 COPY --from=builder /workspace/zero-trust-workload-identity-manager /usr/bin
 RUN mkdir -p /tmp/e2e-cover && chown 65532:65532 /tmp/e2e-cover && chmod 700 /tmp/e2e-cover
 USER 65532:65532
