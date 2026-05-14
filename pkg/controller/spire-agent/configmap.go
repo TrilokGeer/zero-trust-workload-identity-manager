@@ -42,11 +42,7 @@ func (r *SpireAgentReconciler) reconcileConfigMap(ctx context.Context, agent *v1
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireAgentConfigMap.Name, Namespace: spireAgentConfigMap.Namespace}, &existingSpireAgentCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireAgentConfigMap); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(spireAgentConfigMap.GetNamespace(), spireAgentConfigMap.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(ConfigMapAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, spireAgentConfigMap, r.log, statusMgr, ConfigMapAvailable); conflictErr != nil {
 				return "", conflictErr
 			}
 			r.log.Error(err, "failed to create spire-agent config map")

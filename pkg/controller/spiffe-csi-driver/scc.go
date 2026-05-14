@@ -88,11 +88,7 @@ func (r *SpiffeCsiReconciler) reconcileSCC(ctx context.Context, driver *v1alpha1
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(SecurityContextConstraintsAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, desired, r.log, statusMgr, SecurityContextConstraintsAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			r.log.Error(err, "Failed to create SpiffeCsiSCC")

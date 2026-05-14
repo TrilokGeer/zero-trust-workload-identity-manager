@@ -34,11 +34,7 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileDeployment(ctx context.C
 	}, &existingSpireOidcDeployment)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, deployment); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(deployment.GetNamespace(), deployment.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(DeploymentAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, deployment, r.log, statusMgr, DeploymentAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			r.log.Error(err, "Failed to create spire oidc discovery provider deployment")

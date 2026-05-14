@@ -34,11 +34,7 @@ func (r *SpireAgentReconciler) reconcileDaemonSet(ctx context.Context, agent *v1
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireAgentDaemonset.Name, Namespace: spireAgentDaemonset.Namespace}, &existingSpireAgentDaemonSet)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireAgentDaemonset); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(spireAgentDaemonset.GetNamespace(), spireAgentDaemonset.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, spireAgentDaemonset, r.log, statusMgr, DaemonSetAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			r.log.Error(err, "failed to create spire-agent daemonset")

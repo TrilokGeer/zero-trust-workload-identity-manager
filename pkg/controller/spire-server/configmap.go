@@ -56,11 +56,7 @@ func (r *SpireServerReconciler) reconcileSpireServerConfigMap(ctx context.Contex
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireServerConfigMap.Name, Namespace: spireServerConfigMap.Namespace}, &existingSpireServerCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireServerConfigMap); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(spireServerConfigMap.Namespace, spireServerConfigMap.Name)
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(ServerConfigMapAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, spireServerConfigMap, r.log, statusMgr, ServerConfigMapAvailable); conflictErr != nil {
 				return "", conflictErr
 			}
 			statusMgr.AddCondition(ServerConfigMapAvailable, "SpireServerConfigMapGenerationFailed",
@@ -130,11 +126,7 @@ func (r *SpireServerReconciler) reconcileSpireControllerManagerConfigMap(ctx con
 	err = r.ctrlClient.Get(ctx, types.NamespacedName{Name: spireControllerManagerConfigMap.Name, Namespace: spireControllerManagerConfigMap.Namespace}, &existingSpireControllerManagerCM)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spireControllerManagerConfigMap); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(spireControllerManagerConfigMap.Namespace, spireControllerManagerConfigMap.Name)
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(ControllerManagerConfigAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, spireControllerManagerConfigMap, r.log, statusMgr, ControllerManagerConfigAvailable); conflictErr != nil {
 				return "", conflictErr
 			}
 			r.log.Error(err, "failed to create spire controller manager config map")

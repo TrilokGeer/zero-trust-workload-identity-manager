@@ -44,11 +44,7 @@ func (r *SpireServerReconciler) reconcileStatefulSet(ctx context.Context, server
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: sts.Name, Namespace: sts.Namespace}, &existingSTS)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, sts); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(sts.Namespace, sts.Name)
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(StatefulSetAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, sts, r.log, statusMgr, StatefulSetAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			statusMgr.AddCondition(StatefulSetAvailable, "SpireServerStatefulSetCreationFailed",

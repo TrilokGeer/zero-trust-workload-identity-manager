@@ -245,7 +245,7 @@ func TestReconcileServiceAccount(t *testing.T) {
 			if tt.expectUpdate && fakeClient.UpdateCallCount() != 1 {
 				t.Errorf("Expected Update to be called once, called %d times", fakeClient.UpdateCallCount())
 			}
-			if !tt.expectUpdate && !tt.expectError && fakeClient.UpdateCallCount() != 0 {
+			if !tt.expectUpdate && fakeClient.UpdateCallCount() != 0 {
 				t.Error("Expected Update not to be called")
 			}
 		})

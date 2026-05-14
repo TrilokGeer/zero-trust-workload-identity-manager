@@ -1512,7 +1512,7 @@ func TestReconcileSpireServerConfigMap(t *testing.T) {
 			if tt.expectUpdate && fakeClient.UpdateCallCount() != 1 {
 				t.Errorf("Expected Update to be called once, got %d", fakeClient.UpdateCallCount())
 			}
-			if !tt.expectUpdate && !tt.expectError && fakeClient.UpdateCallCount() != 0 {
+			if !tt.expectUpdate && fakeClient.UpdateCallCount() != 0 {
 				t.Error("Expected Update not to be called")
 			}
 		})
@@ -1646,7 +1646,7 @@ func TestReconcileSpireControllerManagerConfigMap(t *testing.T) {
 			if tt.expectUpdate && fakeClient.UpdateCallCount() != 1 {
 				t.Errorf("Expected Update to be called once, got %d", fakeClient.UpdateCallCount())
 			}
-			if !tt.expectUpdate && !tt.expectError && fakeClient.UpdateCallCount() != 0 {
+			if !tt.expectUpdate && fakeClient.UpdateCallCount() != 0 {
 				t.Error("Expected Update not to be called")
 			}
 		})

@@ -35,11 +35,7 @@ func (r *SpiffeCsiReconciler) reconcileDaemonSet(ctx context.Context, driver *v1
 	err := r.ctrlClient.Get(ctx, types.NamespacedName{Name: spiffeCsiDaemonset.Name, Namespace: spiffeCsiDaemonset.Namespace}, &existingSpiffeCsiDaemonSet)
 	if err != nil && kerrors.IsNotFound(err) {
 		if err = r.ctrlClient.Create(ctx, spiffeCsiDaemonset); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(spiffeCsiDaemonset.GetNamespace(), spiffeCsiDaemonset.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(DaemonSetAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, spiffeCsiDaemonset, r.log, statusMgr, DaemonSetAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			r.log.Error(err, "Failed to create SpiffeCsiDaemon set")

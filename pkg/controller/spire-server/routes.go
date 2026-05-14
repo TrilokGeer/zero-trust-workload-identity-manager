@@ -108,11 +108,7 @@ func (r *SpireServerReconciler) reconcileRoute(ctx context.Context, server *v1al
 		if err != nil {
 			if kerrors.IsNotFound(err) {
 				if err = r.ctrlClient.Create(ctx, route); err != nil {
-					if utils.IsResourceConflictOnCreate(err) {
-						conflictErr := utils.ResourceConflictError(route.Namespace, route.Name)
-						r.log.Error(conflictErr, "resource conflict detected")
-						statusMgr.AddCondition(RouteAvailable, v1alpha1.ReasonResourceConflict,
-							conflictErr.Error(), metav1.ConditionFalse)
+					if conflictErr := utils.HandleCreateConflict(err, route, r.log, statusMgr, RouteAvailable); conflictErr != nil {
 						return conflictErr
 					}
 					r.log.Error(err, "Failed to create federation route")

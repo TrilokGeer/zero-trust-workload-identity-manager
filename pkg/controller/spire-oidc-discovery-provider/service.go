@@ -46,11 +46,7 @@ func (r *SpireOidcDiscoveryProviderReconciler) reconcileService(ctx context.Cont
 
 		// Resource doesn't exist, create it
 		if err := r.ctrlClient.Create(ctx, desired); err != nil {
-			if utils.IsResourceConflictOnCreate(err) {
-				conflictErr := utils.ResourceConflictError(desired.GetNamespace(), desired.GetName())
-				r.log.Error(conflictErr, "resource conflict detected")
-				statusMgr.AddCondition(ServiceAvailable, v1alpha1.ReasonResourceConflict,
-					conflictErr.Error(), metav1.ConditionFalse)
+			if conflictErr := utils.HandleCreateConflict(err, desired, r.log, statusMgr, ServiceAvailable); conflictErr != nil {
 				return conflictErr
 			}
 			r.log.Error(err, "failed to create service")
