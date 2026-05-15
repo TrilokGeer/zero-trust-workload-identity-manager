@@ -46,7 +46,6 @@ setup() {
     ]"
 
     echo "Waiting for operator rollout with coverage image..."
-    sleep 5
     oc rollout status "deployment/${DEPLOYMENT}" -n "${NAMESPACE}" --timeout=180s
 
     echo "Verifying GOCOVERDIR is set in the running pod..."
@@ -81,7 +80,7 @@ collect() {
     oc exec -n "${NAMESPACE}" "${pod}" -c manager -- /bin/sh -c 'kill -TERM 1' || true
 
     echo "Waiting for container to restart..."
-    sleep 10
+    oc wait pod/"${pod}" --for=condition=Ready=False -n "${NAMESPACE}" --timeout=30s 2>/dev/null || true
     oc wait pod/"${pod}" --for=condition=Ready -n "${NAMESPACE}" --timeout=120s
 
     mkdir -p "${coverage_dir}"
@@ -104,10 +103,11 @@ collect() {
 
         if [[ -n "${CODECOV_TOKEN:-}" ]]; then
             echo "Uploading to Codecov..."
+            local codecov_version="v0.8.0"
             local codecov_bin="${artifact_dir}/codecov"
-            curl -sS -o "${codecov_bin}"              https://uploader.codecov.io/latest/linux/codecov
-            curl -sS -o "${codecov_bin}.SHA256SUM"    https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
-            curl -sS -o "${codecov_bin}.SHA256SUM.sig" https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            curl -sS -o "${codecov_bin}"              "https://uploader.codecov.io/${codecov_version}/linux/codecov"
+            curl -sS -o "${codecov_bin}.SHA256SUM"    "https://uploader.codecov.io/${codecov_version}/linux/codecov.SHA256SUM"
+            curl -sS -o "${codecov_bin}.SHA256SUM.sig" "https://uploader.codecov.io/${codecov_version}/linux/codecov.SHA256SUM.sig"
 
             if command -v gpg >/dev/null 2>&1 && command -v gpgv >/dev/null 2>&1; then
                 curl -sS https://keybase.io/codecovsecurity/pgp_keys.asc \

@@ -352,8 +352,6 @@ vendor:
 ##
 ## Targets for building a coverage-instrumented operator image, collecting
 ## coverage data written during E2E tests, and uploading the report to Codecov.
-## Uses emptyDir (no PVC): the collect step sends SIGTERM to the operator
-## process, waits for container restart, then copies data from the running pod.
 ##
 ## Typical flow (local):
 ##   make docker-build-coverage docker-push-coverage   # build & push coverage image
