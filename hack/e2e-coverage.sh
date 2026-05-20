@@ -22,7 +22,7 @@ setup() {
     echo "--- E2E Coverage Setup ---"
 
     if [[ -z "${COVERAGE_IMAGE:-}" ]]; then
-        echo "Error: COVERAGE_IMAGE env var must be set"
+        echo "Error: COVERAGE_IMAGE env var must be set" >&2
         exit 1
     fi
     echo "Coverage image: ${COVERAGE_IMAGE}"
@@ -32,10 +32,10 @@ setup() {
     csv=$(oc get deployment "${DEPLOYMENT}" -n "${NAMESPACE}" \
         -o jsonpath='{.metadata.ownerReferences[?(@.kind=="ClusterServiceVersion")].name}')
     if [[ -z "${csv}" ]]; then
-        echo "Error: no CSV found for zero-trust-workload-identity-manager"
+        echo "Error: no CSV entry found in ownerReference for ${DEPLOYMENT} in namespace ${NAMESPACE}" >&2
         exit 1
     fi
-    echo "Found CSV: ${csv}"
+    echo "CSV name derived from deployment ownerReferences to patch: ${csv}"
 
     echo "Patching CSV with coverage image, GOCOVERDIR, and emptyDir volume..."
     oc patch csv "${csv}" -n "${NAMESPACE}" --type=json -p "[
@@ -71,7 +71,7 @@ collect() {
     pod=$(oc get pod -n "${NAMESPACE}" -l "${POD_LABEL}" \
         -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
     if [[ -z "${pod}" ]]; then
-        echo "Error: no operator pod found in namespace ${NAMESPACE}"
+        echo "Error: no operator pod found in namespace ${NAMESPACE}" >&2
         exit 1
     fi
     echo "Operator pod: ${pod}"
@@ -144,7 +144,11 @@ collect() {
                 echo "Local run -- no Prow context, Codecov will auto-detect from git"
             fi
 
-            "${codecov_bin}" "${codecov_args[@]}" || echo "Warning: Codecov upload failed (non-fatal)"
+            local rc=0
+            "${codecov_bin}" "${codecov_args[@]}" || rc=$?
+            if [[ ${rc} -ne 0 ]]; then
+                echo "Warning: Codecov upload failed with exit code ${rc} (non-fatal)" >&2
+            fi
             rm -f "${codecov_bin}" "${codecov_bin}.SHA256SUM" "${codecov_bin}.SHA256SUM.sig"
         else
             echo "CODECOV_TOKEN not set -- skipping Codecov upload."
