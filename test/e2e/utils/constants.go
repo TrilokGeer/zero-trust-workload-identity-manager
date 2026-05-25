@@ -45,6 +45,11 @@ const (
 	SpiffeHelperContainerName = "spiffe-helper"
 	SpiffeHelperImage         = "ghcr.io/spiffe/spiffe-helper:0.11.0"
 
+	DefaultX509SVIDTTL = 1 * time.Hour
+	// ClockSkewTolerance accounts for the small time buffer SPIRE adds to
+	// certificate validity for clock skew compensation.
+	ClockSkewTolerance = 1 * time.Minute
+
 	DefaultInterval    = 10 * time.Second
 	ShortInterval      = 5 * time.Second
 	DefaultTimeout     = 5 * time.Minute
