@@ -24,7 +24,25 @@ import (
 	spiffev1alpha "github.com/spiffe/spire-controller-manager/api/v1alpha1"
 )
 
-const defaultCaKeyType = "rsa-2048"
+const (
+	defaultCaKeyType = "rsa-2048"
+
+	// Upstream Authority plugin names
+	pluginNameUpstreamAuthority = "UpstreamAuthority"
+	pluginNameCertManager       = "cert-manager"
+	pluginNameVault             = "vault"
+
+	// Upstream Authority defaults
+	defaultIssuerKind      = "Issuer"
+	defaultIssuerGroup     = "cert-manager.io"
+	defaultPKIMountPoint   = "pki"
+	defaultK8sAuthMount    = "kubernetes"
+	vaultTokenPath         = "/var/run/secrets/tokens/vault"
+	vaultTokenMountDir     = "/var/run/secrets/tokens"
+	vaultTokenFileName     = "vault"
+	upstreamCAMountPath    = "/run/spire/upstream-ca"
+	upstreamCACertFileName = "ca.crt"
+)
 
 type ControllerManagerConfigYAML struct {
 	Kind                                  string            `json:"kind"`
@@ -320,7 +338,89 @@ func generateServerConfMap(config *v1alpha1.SpireServerSpec, ztwim *v1alpha1.Zer
 		serverSection["federation"] = generateFederationConfig(config.Federation)
 	}
 
+	if config.UpstreamAuthority != nil {
+		if uaPlugin := buildUpstreamAuthorityPlugin(config.UpstreamAuthority); uaPlugin != nil {
+			plugins := configMap["plugins"].(map[string]interface{})
+			plugins[pluginNameUpstreamAuthority] = uaPlugin
+		}
+	}
+
 	return configMap
+}
+
+func buildUpstreamAuthorityPlugin(ua *v1alpha1.UpstreamAuthorityConfig) []map[string]interface{} {
+	if ua.CertManager != nil {
+		return []map[string]interface{}{
+			{
+				pluginNameCertManager: map[string]interface{}{
+					"plugin_data": buildCertManagerPluginData(ua.CertManager),
+				},
+			},
+		}
+	}
+	if ua.Vault != nil {
+		return []map[string]interface{}{
+			{
+				pluginNameVault: map[string]interface{}{
+					"plugin_data": buildVaultPluginData(ua.Vault),
+				},
+			},
+		}
+	}
+	return nil
+}
+
+func buildCertManagerPluginData(cm *v1alpha1.UpstreamAuthorityCertManager) map[string]interface{} {
+	issuerKind := cm.IssuerKind
+	if issuerKind == "" {
+		issuerKind = defaultIssuerKind
+	}
+	issuerGroup := cm.IssuerGroup
+	if issuerGroup == "" {
+		issuerGroup = defaultIssuerGroup
+	}
+	return map[string]interface{}{
+		"issuer_name":  cm.IssuerName,
+		"issuer_kind":  issuerKind,
+		"issuer_group": issuerGroup,
+		"namespace":    cm.Namespace,
+	}
+}
+
+func buildVaultPluginData(v *v1alpha1.UpstreamAuthorityVault) map[string]interface{} {
+	pkiMountPoint := v.PKIMountPoint
+	if pkiMountPoint == "" {
+		pkiMountPoint = defaultPKIMountPoint
+	}
+
+	pluginData := map[string]interface{}{
+		"vault_addr":      v.VaultAddr,
+		"pki_mount_point": pkiMountPoint,
+	}
+
+	if v.CACertSecretRef != nil {
+		pluginData["ca_cert_path"] = upstreamCAMountPath + "/" + upstreamCACertFileName
+	}
+
+	pluginData["insecure_skip_verify"] = v.InsecureSkipVerify
+
+	if v.VaultNamespace != "" {
+		pluginData["namespace"] = v.VaultNamespace
+	}
+
+	if v.K8sAuth != nil {
+		k8sAuthMountPoint := v.K8sAuth.K8sAuthMountPoint
+		if k8sAuthMountPoint == "" {
+			k8sAuthMountPoint = defaultK8sAuthMount
+		}
+		pluginData["k8s_auth"] = map[string]interface{}{
+			"k8s_auth_mount_point": k8sAuthMountPoint,
+			"k8s_auth_role_name":   v.K8sAuth.K8sAuthRoleName,
+			"token_path":           vaultTokenPath,
+		}
+	}
+
+	return pluginData
 }
 
 // generateFederationConfig generates the federation configuration for SPIRE server

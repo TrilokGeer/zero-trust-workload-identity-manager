@@ -2,6 +2,7 @@ package spire_server
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -155,6 +156,61 @@ func validateTTLDurationsWithWarnings(config *v1alpha1.SpireServerSpec) TTLValid
 	}
 
 	return result
+}
+
+// validateUpstreamAuthority validates the UpstreamAuthority configuration
+func validateUpstreamAuthority(ua *v1alpha1.UpstreamAuthorityConfig) error {
+	if ua == nil {
+		return nil
+	}
+
+	cmSet := ua.CertManager != nil
+	vaultSet := ua.Vault != nil
+
+	if cmSet == vaultSet {
+		return fmt.Errorf("exactly one of certManager or vault must be set")
+	}
+
+	if cmSet {
+		return validateUpstreamAuthorityCertManager(ua.CertManager)
+	}
+	return validateUpstreamAuthorityVault(ua.Vault)
+}
+
+func validateUpstreamAuthorityCertManager(cm *v1alpha1.UpstreamAuthorityCertManager) error {
+	if cm.Namespace == "" {
+		return fmt.Errorf("certManager.namespace is required")
+	}
+	if cm.IssuerName == "" {
+		return fmt.Errorf("certManager.issuerName is required")
+	}
+	if cm.IssuerKind != "" && cm.IssuerKind != "Issuer" && cm.IssuerKind != "ClusterIssuer" {
+		return fmt.Errorf("certManager.issuerKind must be Issuer or ClusterIssuer, got %s", cm.IssuerKind)
+	}
+	return nil
+}
+
+func validateUpstreamAuthorityVault(v *v1alpha1.UpstreamAuthorityVault) error {
+	if v.VaultAddr == "" {
+		return fmt.Errorf("vault.vaultAddr is required")
+	}
+	u, err := url.Parse(v.VaultAddr)
+	if err != nil {
+		return fmt.Errorf("vault.vaultAddr is not a valid URL: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("vault.vaultAddr must use http or https scheme, got %q", u.Scheme)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("vault.vaultAddr must include a host")
+	}
+	if v.K8sAuth == nil {
+		return fmt.Errorf("vault.k8sAuth is required")
+	}
+	if v.K8sAuth.K8sAuthRoleName == "" {
+		return fmt.Errorf("vault.k8sAuth.k8sAuthRoleName is required")
+	}
+	return nil
 }
 
 // validateFederationConfig validates the federation configuration
