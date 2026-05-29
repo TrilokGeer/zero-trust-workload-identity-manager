@@ -85,7 +85,7 @@ func generateAgentConfig(cfg *v1alpha1.SpireAgent, ztwim *v1alpha1.ZeroTrustWork
 			"data_dir":          "/var/lib/spire",
 			"log_level":         utils.GetLogLevelFromString(cfg.Spec.LogLevel),
 			"log_format":        utils.GetLogFormatFromString(cfg.Spec.LogFormat),
-			"retry_bootstrap":   true,
+			"rebootstrap_mode":  "auto",
 			"server_address":    spireServerAddress,
 			"server_port":       "443",
 			"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
