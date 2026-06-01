@@ -41,6 +41,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "example.org",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",
@@ -89,6 +93,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "test.domain",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",
@@ -147,6 +155,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "workload.domain",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",
@@ -213,6 +225,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "full.domain",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",
@@ -283,6 +299,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "disabled.domain",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",
@@ -330,6 +350,10 @@ func TestGenerateAgentConfig(t *testing.T) {
 					"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 					"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 					"trust_domain":      "workload-disabled.domain",
+					"sds": map[string]interface{}{
+						"default_bundle_name":      "null",
+						"default_all_bundles_name": "ROOTCA",
+					},
 				},
 				"health_checks": map[string]interface{}{
 					"bind_address":     "0.0.0.0",

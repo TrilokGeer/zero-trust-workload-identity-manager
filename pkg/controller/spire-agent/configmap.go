@@ -96,6 +96,15 @@ func generateAgentConfig(cfg *v1alpha1.SpireAgent, ztwim *v1alpha1.ZeroTrustWork
 			"socket_path":       "/tmp/spire-agent/public/spire-agent.sock",
 			"trust_bundle_path": "/run/spire/bundle/bundle.crt",
 			"trust_domain":      ztwim.Spec.TrustDomain,
+			// SDS settings required for Envoy/Istio integration.
+			// default_bundle_name "null" prevents the local-only handler intercepting "ROOTCA".
+			// default_all_bundles_name "ROOTCA" routes Envoy's "ROOTCA" request to buildAll(),
+			// serving both local and federated CA bundles. Safe for single-cluster too —
+			// buildAll() returns only the local CA when no federated bundles exist.
+			"sds": map[string]interface{}{
+				"default_bundle_name":      "null",
+				"default_all_bundles_name": "ROOTCA",
+			},
 		},
 		"health_checks": map[string]interface{}{
 			"bind_address":     "0.0.0.0",
